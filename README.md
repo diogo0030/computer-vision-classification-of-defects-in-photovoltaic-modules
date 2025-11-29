@@ -1,1 +1,1 @@
-# Computer-vision-classification-of-defects-in-photovoltaic-modules
+# computer-vision-classification-of-defects-in-photovoltaic-modules
