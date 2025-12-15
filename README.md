@@ -1,68 +1,94 @@
-# Classification of Defects in Photovoltaic Modules
+# Classification of Defects in Photovoltaic Modules using Thermal Imagery
 
-This project implements a Deep Learning pipeline for the automatic detection and classification of anomalies in thermal images of photovoltaic (PV) modules. Developed as part of the Computer Vision course (Assignment 2) at FEUP (2025/2026), it aims to automate the inspection process of solar farms by identifying defects such as hotspots, cracking, or vegetation to maintain energy efficiency and prolong equipment lifespan.
+This repository contains the implementation of a Deep Learning pipeline for the automatic detection and classification of anomalies in infrared images of photovoltaic (PV) modules. Developed for the Computer Vision course (Assignment 2) at FEUP (2025/2026), this project compares a custom Convolutional Neural Network (CNN) with a Transfer Learning approach (ResNet18) to solve the challenge of imbalanced thermal datasets.
 
-The solution leverages Convolutional Neural Networks (CNNs) and Transfer Learning, utilizing the Raptor Maps Infrared Solar Modules dataset (20,000 images).
-
-### Grade: ??
-
----
-
-## Overview
-
-Thermal inspection is a critical non-invasive technique for assessing the health of PV modules. Manual analysis of thousands of infrared images is time-consuming and error-prone. This project automates this process using Convolutional Neural Networks.
-
-We developed and compared three AI models to classify thermal images:
-1.  **Binary Classification:** Anomaly vs. No-Anomaly.
-2.  **11-Class Classification:** Detailed classification of specific defects (e.g., Cell, Hot-Spot, Diode).
-3.  **12-Class Classification:** The full range of 11 anomaly types plus the "No-Anomaly" class.
-
-## Features and Methodology
-
-Our approach focuses on robust data preparation to handle the specific challenges of thermal imagery (low contrast) and dataset imbalance.
-
-### 1. Preprocessing Pipeline
-* **Unsharp Masking:** Applied a sharpening filter (Radius=2, Amount=150%) to enhance the thermal edges of defects, making subtle anomalies like *Cracking* more visible to the network.
-* **Resolution:** All images were resized to **128x128** (upscaled from the original low resolution) to preserve spatial details.
-* **Stratified Split:** Data divided into 80% Train, 10% Validation, and 10% Test before augmentation to prevent data leakage.
-
-### 2. Hybrid Data Augmentation
-We implemented a two-stage augmentation strategy to solve class imbalance and overfitting:
-* **Offline Augmentation (Balancing):** Used to physically generate new images for minority classes (e.g., *Diode-Multi*, *Soiling*) before training. We targeted **3000 images per class** using aggressive transformations (flips, rotations) to eliminate statistical bias.
-* **Online Augmentation (Generalization):** Applied dynamic transformations during training (Random Affine, Color Jitter, Random Flips) to ensure the model never sees the exact same image twice, increasing robustness.
-
-### 3. Model Architectures
-* **Custom CNN:** A lightweight Convolutional Neural Network built from scratch with 4 convolutional blocks, Batch Normalization, and Dropout.
-* **ResNet18 (Transfer Learning):** Adaptation of the pre-trained ResNet18 architecture. The first layer was modified to accept 1-channel grayscale inputs, leveraging features learned from ImageNet to improve performance on the complex 11-class task.
-
----
-
-## Results and Performance
-
-We conducted extensive experiments to compare the impact of Data Augmentation and Model Architecture.
-
-### Key Findings:
-
-* **Impact of Balancing:** The **Offline Augmentation** strategy was crucial. Without it, models achieved high accuracy by simply predicting the majority classes (*Cell*, *Vegetation*) while failing to detect critical rare defects (*Diode*, *Hot-Spot-Multi*). Balancing the classes to 3000 samples equalized the F1-Scores across categories.
-* **Architecture Comparison:**
-    * In **Binary Classification**, the **Custom CNN** proved highly efficient, achieving competitive results (~72% Accuracy) with significantly fewer parameters than pre-trained models.
-    * In **Multi-Class Classification (11/12 classes)**, the **ResNet18** outperformed the Custom CNN. The complexity of distinguishing between visually similar defects (e.g., *Hot-Spot* vs. *Cell*) benefited from the deeper architecture and transfer learning.
-* **Visual Enhancement:** The use of **Unsharp Masking** improved the convergence rate of the models by emphasizing the boundaries of thermal anomalies, which are often blurry in raw infrared images.
-
----
-
-
-## Authors
-
-* **Afonso Tomas de Magalhaes Mateus** (202204126)
+## 👥 Authors
+* **Afonso Tomás de Magalhães Mateus** (202204126)
 * **Diogo Soares de Albergaria Oliveira** (202108325)
 
-## References
+---
 
-This work is based on state-of-the-art research in PV fault detection:
-* *Ramadan, E.A., et al.* (2024). "An innovative transformer neural network for fault detection and classification for photovoltaic modules". Energy Conversion and Management.
-* *Le, M., et al.* (2023). "Thermal inspection of photovoltaic modules with deep convolutional neural networks on edge devices in AUV". Measurement.
+## 📌 Project Overview
+Thermal inspection is crucial for maintaining solar farm efficiency. This project automates the identification of defects (e.g., Hotspots, Cracking, Diode failures) using the **Raptor Maps Infrared Solar Modules dataset** (20,000 images).
+
+The workflow includes:
+1.  **Data Preprocessing:** Enhancement of low-contrast thermal images.
+2.  **Hybrid Augmentation:** A dual-strategy to handle severe class imbalance.
+3.  **Model Training:** Comparison between a custom CNN and ResNet18.
+4.  **Evaluation:** Testing on Binary (2-class), Multi-class (11-class), and Full (12-class) scenarios.
 
 ---
 
-**Note:** This project was developed for academic purposes.
+## ⚙️ Methodology & Code Structure
+
+The implementation is modular, defined in the `Assignment2_202204126_202108325.ipynb` notebook:
+
+### 1. Preprocessing (`ImagePreprocessor`)
+Thermal images often lack edge definition. We implemented a preprocessing pipeline that:
+* **Unsharp Masking:** Applies a sharpening filter (Radius=2, Percent=150, Threshold=3) to enhance defect boundaries.
+* **Resizing:** Normalizes all inputs to **128x128 pixels** (upscaling from original low resolutions like 24x40) to preserve spatial details for the CNNs.
+
+### 2. Hybrid Data Augmentation (`AugmentationWorker`)
+A key feature of this implementation is the separation of augmentation into two distinct phases to solve class imbalance without causing data leakage:
+
+* **Offline Augmentation (Balancing):**
+    * *Goal:* Equalize the dataset distribution before training.
+    * *Method:* Generates synthetic images (using rotation and flipping) for minority classes (e.g., *Diode-Multi*, *Soiling*) to reach a target of **3,000 images per class**.
+    * *Code:* `generate_offline_aug` function saves these new files to disk.
+
+* **Online Augmentation (Generalization):**
+    * *Goal:* Prevent overfitting during training.
+    * *Method:* Applies dynamic, random transformations to every batch fed into the model.
+    * *Techniques:* Random Affine (Rotation/Translation), Color Jitter (Brightness/Contrast), and Random Horizontal/Vertical Flips.
+
+### 3. Model Architectures
+We implemented and compared two architectures:
+* **Custom CNN (`PVClassifier`):** A lightweight network built from scratch with 4 convolutional blocks (`Conv2d` + `BatchNorm` + `ReLU` + `MaxPool`) followed by Global Average Pooling. Designed to be efficient for edge devices.
+* **ResNet18 (`ResNet18_Custom`):** A transfer learning approach using a pre-trained ResNet18. We modified the first convolutional layer to accept **1-channel grayscale input** (averaging the original RGB weights) and adapted the final fully connected layer to the specific number of classes (2, 11, or 12).
+
+---
+
+## 🧪 Experiments
+
+The code is structured to run three main experimental scenarios:
+
+1.  **Binary Classification:**
+    * Aggregates all defect types into a single "Anomaly" class vs. "No-Anomaly".
+    * *Goal:* Fast screening of defective panels.
+
+2.  **11-Class Classification (Anomalies Only):**
+    * Focuses on distinguishing specific defect types (e.g., *Cell* vs. *Hot-Spot* vs. *Cracking*) excluding healthy panels.
+    * Uses **Offline Augmentation** to balance the dataset.
+
+3.  **12-Class Classification (Full Spectrum):**
+    * Classifies all anomaly types plus the "No-Anomaly" class.
+    * Challenges the model to distinguish between healthy panels and subtle defects.
+
+4.  **Augmentation Impact Study:**
+    * Specifically compares model performance with vs. without the offline balancing strategy to demonstrate the necessity of data augmentation in imbalanced datasets.
+
+---
+
+## 🚀 How to Run
+
+1.  **Prerequisites:**
+    The notebook checks for GPU availability (`torch.cuda.is_available()`). It is recommended to run this in Google Colab or a local machine with a CUDA-enabled GPU.
+
+2.  **Dataset:**
+    The code automatically clones the dataset from GitHub:
+    ```python
+    !git clone [https://github.com/RaptorMaps/InfraredSolarModules.git](https://github.com/RaptorMaps/InfraredSolarModules.git)
+    ```
+
+3.  **Execution:**
+    Run all cells in `Assignment2_202204126_202108325.ipynb`. The script will:
+    * Preprocess images.
+    * Generate offline augmentation files.
+    * Train the models for each scenario.
+    * Output confusion matrices and loss/accuracy curves.
+
+---
+
+## 📚 References
+* *Ramadan, E.A., et al.* (2024). "An innovative transformer neural network for fault detection and classification for photovoltaic modules". Energy Conversion and Management.
+* *Le, M., et al.* (2023). "Thermal inspection of photovoltaic modules with deep convolutional neural networks on edge devices in AUV". Measurement.
