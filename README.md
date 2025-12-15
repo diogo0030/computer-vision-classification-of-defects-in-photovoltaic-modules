@@ -70,26 +70,6 @@ The code is structured to run three main experimental scenarios:
 
 ---
 
-## 🚀 How to Run
-
-1.  **Prerequisites:**
-    The notebook checks for GPU availability (`torch.cuda.is_available()`). It is recommended to run this in Google Colab or a local machine with a CUDA-enabled GPU.
-
-2.  **Dataset:**
-    The code automatically clones the dataset from GitHub:
-    ```python
-    !git clone [https://github.com/RaptorMaps/InfraredSolarModules.git](https://github.com/RaptorMaps/InfraredSolarModules.git)
-    ```
-
-3.  **Execution:**
-    Run all cells in `Assignment2_202204126_202108325.ipynb`. The script will:
-    * Preprocess images.
-    * Generate offline augmentation files.
-    * Train the models for each scenario.
-    * Output confusion matrices and loss/accuracy curves.
-
----
-
 ## 📚 References
 * *Ramadan, E.A., et al.* (2024). "An innovative transformer neural network for fault detection and classification for photovoltaic modules". Energy Conversion and Management.
 * *Le, M., et al.* (2023). "Thermal inspection of photovoltaic modules with deep convolutional neural networks on edge devices in AUV". Measurement.
