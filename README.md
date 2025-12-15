@@ -17,14 +17,39 @@ We developed and compared three AI models to classify thermal images:
 2.  **11-Class Classification:** Detailed classification of specific defects (e.g., Cell, Hot-Spot, Diode).
 3.  **12-Class Classification:** The full range of 11 anomaly types plus the "No-Anomaly" class.
 
-## Features and Methodology 
+## Features and Methodology
 
+Our approach focuses on robust data preparation to handle the specific challenges of thermal imagery (low contrast) and dataset imbalance.
+
+### 1. Preprocessing Pipeline
+* **Unsharp Masking:** Applied a sharpening filter (Radius=2, Amount=150%) to enhance the thermal edges of defects, making subtle anomalies like *Cracking* more visible to the network.
+* **Resolution:** All images were resized to **128x128** (upscaled from the original low resolution) to preserve spatial details.
+* **Stratified Split:** Data divided into 80% Train, 10% Validation, and 10% Test before augmentation to prevent data leakage.
+
+### 2. Hybrid Data Augmentation
+We implemented a two-stage augmentation strategy to solve class imbalance and overfitting:
+* **Offline Augmentation (Balancing):** Used to physically generate new images for minority classes (e.g., *Diode-Multi*, *Soiling*) before training. We targeted **3000 images per class** using aggressive transformations (flips, rotations) to eliminate statistical bias.
+* **Online Augmentation (Generalization):** Applied dynamic transformations during training (Random Affine, Color Jitter, Random Flips) to ensure the model never sees the exact same image twice, increasing robustness.
+
+### 3. Model Architectures
+* **Custom CNN:** A lightweight Convolutional Neural Network built from scratch with 4 convolutional blocks, Batch Normalization, and Dropout.
+* **ResNet18 (Transfer Learning):** Adaptation of the pre-trained ResNet18 architecture. The first layer was modified to accept 1-channel grayscale inputs, leveraging features learned from ImageNet to improve performance on the complex 11-class task.
+
+---
 
 ## Results and Performance
 
 We conducted extensive experiments to compare the impact of Data Augmentation and Model Architecture.
 
 ### Key Findings:
+
+* **Impact of Balancing:** The **Offline Augmentation** strategy was crucial. Without it, models achieved high accuracy by simply predicting the majority classes (*Cell*, *Vegetation*) while failing to detect critical rare defects (*Diode*, *Hot-Spot-Multi*). Balancing the classes to 3000 samples equalized the F1-Scores across categories.
+* **Architecture Comparison:**
+    * In **Binary Classification**, the **Custom CNN** proved highly efficient, achieving competitive results (~72% Accuracy) with significantly fewer parameters than pre-trained models.
+    * In **Multi-Class Classification (11/12 classes)**, the **ResNet18** outperformed the Custom CNN. The complexity of distinguishing between visually similar defects (e.g., *Hot-Spot* vs. *Cell*) benefited from the deeper architecture and transfer learning.
+* **Visual Enhancement:** The use of **Unsharp Masking** improved the convergence rate of the models by emphasizing the boundaries of thermal anomalies, which are often blurry in raw infrared images.
+
+---
 
 
 ## Authors
