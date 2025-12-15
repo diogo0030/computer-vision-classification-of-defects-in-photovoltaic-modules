@@ -26,14 +26,14 @@ The implementation is modular, defined in the `Assignment2_202204126_202108325.i
 ### 1. Preprocessing (`ImagePreprocessor`)
 Thermal images often lack edge definition. We implemented a preprocessing pipeline that:
 * **Unsharp Masking:** Applies a sharpening filter (Radius=2, Percent=150, Threshold=3) to enhance defect boundaries.
-* **Resizing:** Normalizes all inputs to **128x128 pixels** (upscaling from original low resolutions like 24x40) to preserve spatial details for the CNNs.
+* **Normalization:** Pixel values are normalized based on ImageNet statistics.
 
 ### 2. Hybrid Data Augmentation (`AugmentationWorker`)
 A key feature of this implementation is the separation of augmentation into two distinct phases to solve class imbalance without causing data leakage:
 
 * **Offline Augmentation (Balancing):**
     * *Goal:* Equalize the dataset distribution before training.
-    * *Method:* Generates synthetic images (using rotation and flipping) for minority classes (e.g., *Diode-Multi*, *Soiling*) to reach a target of **3,000 images per class**.
+    * *Method:* Generates synthetic images (using rotation and flipping) for minority classes (e.g., *Diode-Multi*, *Soiling*).
     * *Code:* `generate_offline_aug` function saves these new files to disk.
 
 * **Online Augmentation (Generalization):**
@@ -45,6 +45,7 @@ A key feature of this implementation is the separation of augmentation into two 
 We implemented and compared two architectures:
 * **Custom CNN (`PVClassifier`):** A lightweight network built from scratch with 4 convolutional blocks (`Conv2d` + `BatchNorm` + `ReLU` + `MaxPool`) followed by Global Average Pooling. Designed to be efficient for edge devices.
 * **ResNet18 (`ResNet18_Custom`):** A transfer learning approach using a pre-trained ResNet18. We modified the first convolutional layer to accept **1-channel grayscale input** (averaging the original RGB weights) and adapted the final fully connected layer to the specific number of classes (2, 11, or 12).
+* **MobileNetV2 (Transfer Learning):** A highly efficient architecture optimized for mobile/edge devices, tested to compare the trade-off between accuracy and model size.
 
 ---
 
@@ -54,18 +55,18 @@ The code is structured to run three main experimental scenarios:
 
 1.  **Binary Classification:**
     * Aggregates all defect types into a single "Anomaly" class vs. "No-Anomaly".
-    * *Goal:* Fast screening of defective panels.
+
 
 2.  **11-Class Classification (Anomalies Only):**
     * Focuses on distinguishing specific defect types (e.g., *Cell* vs. *Hot-Spot* vs. *Cracking*) excluding healthy panels.
-    * Uses **Offline Augmentation** to balance the dataset.
+    
 
 3.  **12-Class Classification (Full Spectrum):**
     * Classifies all anomaly types plus the "No-Anomaly" class.
-    * Challenges the model to distinguish between healthy panels and subtle defects.
+   
 
 4.  **Augmentation Impact Study:**
-    * Specifically compares model performance with vs. without the offline balancing strategy to demonstrate the necessity of data augmentation in imbalanced datasets.
+    * Specifically compares model performance with vs. without the balancing strategy to demonstrate the necessity of data augmentation in imbalanced datasets.
 
 ---
 
